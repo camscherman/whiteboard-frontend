@@ -1,5 +1,17 @@
-import { MOUSE_DOWN, MOUSE_UP, DRAW_TO_CANVAS } from "../redux/actionTypes";
-import { remoteMouseDown, remoteMouseUp, drawToCanvas } from "../redux/actions";
+import {
+  MOUSE_DOWN,
+  MOUSE_UP,
+  DRAW_TO_CANVAS,
+  WhiteboardActionTypes,
+} from "../redux/store/whiteboardCanvas/types";
+import { Socket, Channel } from "phoenix";
+import {
+  remoteMouseDown,
+  remoteMouseUp,
+  drawToCanvas,
+  emptyAction,
+} from "../redux/actions";
+import { RootState } from "../redux/reducers/index";
 import {
   select,
   put,
@@ -13,15 +25,27 @@ import {
 import { eventChannel } from "redux-saga";
 import socketConnection from "../socketConnection";
 import { PEER_MESSAGE } from "../socket/socketActionTypes";
-import { drawEvent, mouseDown, mouseUp } from "../socket/socketActions";
+import {
+  drawEvent,
+  mouseDown,
+  mouseUp,
+  SocketEvents,
+} from "../socket/socketActions";
 
-export const getLocalDrawing = ({ whiteboardCanvas }) =>
-  whiteboardCanvas.localDrawing;
+interface SocketMessage {
+  body: string;
+  type: string;
+}
+const socket = socketConnection();
+const channel = joinChannel(socket, "call:peer2peer");
 
-export const getRemoteDrawing = ({ whiteboardCanvas }) =>
-  whiteboardCanvas.remoteDrawing;
+export const getLocalDrawing = (state: RootState): Boolean =>
+  state.whiteboardCanvas.localDrawing;
 
-export function joinChannel(socket, channelName) {
+export const getRemoteDrawing = (state: RootState): Boolean =>
+  state.whiteboardCanvas.remoteDrawing;
+
+export function joinChannel(socket: Socket, channelName: string): Channel {
   const channel = socket.channel(channelName, {});
   channel
     .join()
@@ -35,11 +59,15 @@ export function joinChannel(socket, channelName) {
   return channel;
 }
 
-export const createSocketChannel = (channel, constant, fn) =>
+export const createSocketChannel = (
+  channel: Channel,
+  constant: string,
+  fn: (event: SocketMessage) => WhiteboardActionTypes
+) =>
   // `eventChannel` takes a subscriber function
   // the subscriber function takes an `emit` argument to put messages onto the channel
   eventChannel((emit) => {
-    const newDataHandler = (event) => {
+    const newDataHandler = (event: SocketMessage) => {
       console.log(event);
       emit(fn(event));
     };
@@ -47,13 +75,14 @@ export const createSocketChannel = (channel, constant, fn) =>
     channel.on(constant, newDataHandler);
 
     const unsubscribe = () => {
-      channel.off(constant, newDataHandler);
+      // channel.off(constant, newDataHandler);
+      channel.off(constant);
     };
 
     return unsubscribe;
   });
 
-function handlePeerMessage(payload) {
+function handlePeerMessage(payload: SocketMessage): WhiteboardActionTypes {
   // const localDrawing = yield select(getLocalDrawing);
   const { body } = payload;
   const message = JSON.parse(body);
@@ -73,10 +102,10 @@ function handlePeerMessage(payload) {
         prevY: previousY,
       });
     default:
-      return {};
+      return emptyAction();
   }
 }
-function* connectWithChatSocket(channel) {
+function* connectWithChatSocket(channel: Channel) {
   // const socket = socket;
   // const channel = yield call(joinChannel, socket, "call:peer2peer");
 
@@ -92,7 +121,7 @@ function* connectWithChatSocket(channel) {
     yield fork(handleUpdatedData, action);
   }
 }
-export function* postDraw(channel, { _, payload }) {
+export function* postDraw(channel: Channel, message: WhiteboardActionTypes) {
   // const message = {
   //   type: "draw-event",
   //   content: {
@@ -103,47 +132,54 @@ export function* postDraw(channel, { _, payload }) {
   //   },
   // };
   debugger;
-  const localDrawing = yield select(getLocalDrawing);
-  const remoteDrawing = yield select(getRemoteDrawing);
-  console.log("Local Drawing", localDrawing);
-  console.log("Remote Drawing", remoteDrawing);
-  if (localDrawing && !remoteDrawing) {
-    yield fork(pushToChannel, channel, drawEvent(payload));
+  if (message.type === DRAW_TO_CANVAS) {
+    const { payload } = message;
+    const localDrawing = yield select(getLocalDrawing);
+    const remoteDrawing = yield select(getRemoteDrawing);
+    console.log("Local Drawing", localDrawing);
+    console.log("Remote Drawing", remoteDrawing);
+    if (localDrawing && !remoteDrawing) {
+      yield fork(pushToChannel, channel, drawEvent(payload));
+    }
   }
 }
 
-function* pushToChannel(channel, message) {
+function* pushToChannel(channel: Channel, message: SocketEvents) {
   const payload = {
     body: JSON.stringify(message),
   };
   yield apply(channel, channel.push, ["peer-message", payload]);
 }
 
-export function* postMouseDown(channel, { _, payload }) {
-  yield fork(pushToChannel, channel, mouseDown(payload));
+export function* postMouseDown(
+  channel: Channel,
+  message: WhiteboardActionTypes
+) {
+  if (message.type === MOUSE_DOWN) {
+    const { payload } = message;
+    yield fork(pushToChannel, channel, mouseDown(payload));
+  }
 }
 
-export function* postMouseUp(channel, { _, payload }) {
-  yield fork(pushToChannel, channel, mouseUp(payload));
+export function* postMouseUp(channel: Channel) {
+  yield fork(pushToChannel, channel, mouseUp());
 }
 
-export function* watchDrawToCanvas(channel) {
+export function* watchDrawToCanvas(channel: Channel) {
   yield takeEvery(DRAW_TO_CANVAS, postDraw, channel);
 }
 
-export function* watchMouseDown(channel) {
+export function* watchMouseDown(channel: Channel) {
   yield takeEvery(MOUSE_DOWN, postMouseDown, channel);
 }
 
-export function* watchMouseUp(channel) {
+export function* watchMouseUp(channel: Channel) {
   yield takeEvery(MOUSE_UP, postMouseUp, channel);
 }
 
-export function* handleUpdatedData(action) {
+export function* handleUpdatedData(action: WhiteboardActionTypes) {
   yield put(action);
 }
-const socket = socketConnection();
-const channel = joinChannel(socket, "call:peer2peer");
 
 export default function* rootSaga() {
   yield all([

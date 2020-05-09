@@ -15,6 +15,7 @@ export const REMOTE_MOUSE_DOWN = "REMOTE_MOUSE_DOWN";
 export const REMOTE_MOUSE_UP = "REMOTE_MOUSE_UP";
 export const DRAW_TO_CANVAS = "DRAW_TO_CANVAS";
 export const DRAW_ASYNC = "DRAW_ASYNC";
+export const EMPTY_ACTION = "EMPTY_ACTION";
 
 export interface DrawMessage {
   x: number;
@@ -53,10 +54,14 @@ interface SendDrawAction {
   type: typeof DRAW_TO_CANVAS;
   payload: DrawMessage;
 }
+interface EmptyAction {
+  type: typeof EMPTY_ACTION;
+}
 
 export type WhiteboardActionTypes =
   | SendDrawAction
   | SendMouseDownAction
   | SendMouseUpAction
   | SendRemoteMouseDownAction
-  | SendRemoteMouseUpAction;
+  | SendRemoteMouseUpAction
+  | EmptyAction;

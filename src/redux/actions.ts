@@ -6,6 +6,7 @@ import {
   REMOTE_MOUSE_UP,
   WhiteboardActionTypes,
   DrawMessage,
+  EMPTY_ACTION,
 } from "./store/whiteboardCanvas/types";
 
 import {
@@ -45,6 +46,10 @@ export const remoteMouseDown = ({
 }: DrawMessage): WhiteboardActionTypes => ({
   type: REMOTE_MOUSE_DOWN,
   payload: { x, y },
+});
+
+export const emptyAction = (): WhiteboardActionTypes => ({
+  type: EMPTY_ACTION,
 });
 
 export const setLocalStream = (

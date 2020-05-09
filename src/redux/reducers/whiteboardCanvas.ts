@@ -13,6 +13,7 @@ import {
   DRAW_TO_CANVAS,
   WhiteboardCanvasState,
   WhiteboardActionTypes,
+  EMPTY_ACTION,
 } from "../store/whiteboardCanvas/types";
 
 const initialState: WhiteboardCanvasState = {
@@ -63,6 +64,8 @@ export default function (
         prevX: action.payload.prevX,
         prevY: action.payload.prevY,
       };
+    case EMPTY_ACTION:
+      return state;
     default:
       return state;
   }
