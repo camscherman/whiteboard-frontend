@@ -15,12 +15,17 @@ import {
   WhiteboardActionTypes,
   EMPTY_ACTION,
 } from "../store/whiteboardCanvas/types";
+import { REMOTE_DRAW_TO_CANVAS } from "../actionTypes";
 
 const initialState: WhiteboardCanvasState = {
   x: 0,
   y: 0,
   prevX: 0,
   prevY: 0,
+  remoteX: 0,
+  remoteY: 0,
+  prevRemoteX: 0,
+  prevRemoteY: 0,
   localDrawing: false,
   remoteDrawing: false,
 };
@@ -46,10 +51,10 @@ export default function (
     case REMOTE_MOUSE_DOWN:
       return {
         ...state,
-        x: action.payload.x,
-        y: action.payload.y,
-        prevX: action.payload.x,
-        prevY: action.payload.y,
+        remoteX: action.payload.remoteX,
+        remoteY: action.payload.remoteY,
+        prevRemoteX: action.payload.remoteX,
+        prevRemoteY: action.payload.remoteY,
         remoteDrawing: state.localDrawing ? false : true,
       };
     case REMOTE_MOUSE_UP:
@@ -63,6 +68,14 @@ export default function (
         y: action.payload.y,
         prevX: action.payload.prevX,
         prevY: action.payload.prevY,
+      };
+    case REMOTE_DRAW_TO_CANVAS:
+      return {
+        ...state,
+        remoteX: action.payload.remoteX,
+        remoteY: action.payload.remoteY,
+        prevRemoteX: action.payload.prevRemoteX,
+        prevRemoteY: action.payload.prevRemoteY,
       };
     case EMPTY_ACTION:
       return state;

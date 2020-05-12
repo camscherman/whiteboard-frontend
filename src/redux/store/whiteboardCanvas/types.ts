@@ -7,6 +7,8 @@
 //   REMOTE_MOUSE_UP,
 // } from "./actionTypes";
 
+import { REMOTE_DRAW_TO_CANVAS } from "../../actionTypes";
+
 export const SET_LOCAL_STREAM = "SET_LOCAL_STREAM";
 export const SET_REMOTE_STREAM = "SET_REMOTE_STREAM";
 export const MOUSE_DOWN = "MOUSE_DOWN";
@@ -24,11 +26,22 @@ export interface DrawMessage {
   prevY?: number;
 }
 
+export interface RemoteDrawMessage {
+  remoteX: number;
+  remoteY: number;
+  prevRemoteX?: number;
+  prevRemoteY?: number;
+}
+
 export interface WhiteboardCanvasState {
   x: number;
   y: number;
   prevX?: number;
   prevY?: number;
+  remoteX: number;
+  remoteY: number;
+  prevRemoteX?: number;
+  prevRemoteY?: number;
   localDrawing: boolean;
   remoteDrawing: boolean;
 }
@@ -43,7 +56,7 @@ interface SendMouseUpAction {
 
 interface SendRemoteMouseDownAction {
   type: typeof REMOTE_MOUSE_DOWN;
-  payload: DrawMessage;
+  payload: RemoteDrawMessage;
 }
 
 interface SendRemoteMouseUpAction {
@@ -54,12 +67,18 @@ interface SendDrawAction {
   type: typeof DRAW_TO_CANVAS;
   payload: DrawMessage;
 }
+
+interface SendRemoteDrawAction {
+  type: typeof REMOTE_DRAW_TO_CANVAS;
+  payload: RemoteDrawMessage;
+}
 interface EmptyAction {
   type: typeof EMPTY_ACTION;
 }
 
 export type WhiteboardActionTypes =
   | SendDrawAction
+  | SendRemoteDrawAction
   | SendMouseDownAction
   | SendMouseUpAction
   | SendRemoteMouseDownAction

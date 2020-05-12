@@ -3,12 +3,13 @@ import {
   MOUSE_UP,
   DRAW_TO_CANVAS,
   WhiteboardActionTypes,
+  RemoteDrawMessage,
 } from "../redux/store/whiteboardCanvas/types";
 import { Socket, Channel } from "phoenix";
 import {
   remoteMouseDown,
   remoteMouseUp,
-  drawToCanvas,
+  remoteDrawToCanvas,
   emptyAction,
 } from "../redux/actions";
 import { RootState } from "../redux/reducers/index";
@@ -81,25 +82,56 @@ export const createSocketChannel = (
 
     return unsubscribe;
   });
+const SOCKET_DRAW_EVENT = "draw-event";
+interface SocketDrawMessage {
+  type: typeof SOCKET_DRAW_EVENT;
+  content: RemoteDrawMessageContent;
+}
+
+interface SocketMouseDownMessage {
+  type: typeof MOUSE_DOWN;
+  content: SocketMouseDownContent;
+}
+interface SocketMouseDownContent {
+  remoteX: number;
+  remoteY: number;
+}
+
+interface SocketMouseUpMessage {
+  type: typeof MOUSE_UP;
+}
+
+interface RemoteDrawMessageContent {
+  currentX: number;
+  currentY: number;
+  previousX: number;
+  previousY: number;
+}
+type SocketMessageBody =
+  | SocketDrawMessage
+  | SocketMouseDownMessage
+  | SocketMouseUpMessage;
 
 function handlePeerMessage(payload: SocketMessage): WhiteboardActionTypes {
   // const localDrawing = yield select(getLocalDrawing);
   const { body } = payload;
-  const message = JSON.parse(body);
+  const message: SocketMessageBody = JSON.parse(body);
   switch (message.type) {
     case MOUSE_UP:
       return remoteMouseUp();
     // yield put(remoteMouseUp);
     case MOUSE_DOWN:
-      return remoteMouseDown(message.content);
-    case "draw-event":
+      const { remoteX, remoteY } = message.content;
+      const payload: RemoteDrawMessage = { remoteX, remoteY };
+      return remoteMouseDown(payload);
+    case SOCKET_DRAW_EVENT:
       console.log("REMOTE DRAW");
       const { currentX, currentY, previousX, previousY } = message.content;
-      return drawToCanvas({
-        x: currentX,
-        y: currentY,
-        prevX: previousX,
-        prevY: previousY,
+      return remoteDrawToCanvas({
+        remoteX: Number(currentX),
+        remoteY: Number(currentY),
+        prevRemoteX: Number(previousX),
+        prevRemoteY: Number(previousY),
       });
     default:
       return emptyAction();
