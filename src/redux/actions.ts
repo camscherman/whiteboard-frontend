@@ -6,8 +6,9 @@ import {
   REMOTE_MOUSE_UP,
   WhiteboardActionTypes,
   DrawMessage,
+  RemoteDrawMessage,
   EMPTY_ACTION,
-} from "./store/whiteboardCanvas/types";
+} from './store/whiteboardCanvas/types';
 
 import {
   SET_LOCAL_STREAM,
@@ -15,16 +16,24 @@ import {
   SetStreamActions,
   SetRemoteStreamMessage,
   SetLocalStreamMessage,
-} from "./store/videoStreams/types";
+} from './store/videoStreams/types';
 
-export const drawToCanvas = ({
-  x,
-  y,
-  prevX,
-  prevY,
-}: DrawMessage): WhiteboardActionTypes => ({
+import { DashboardActionTypes, TOGGLE_SIDEBAR } from './store/dashboard/types';
+import { REMOTE_DRAW_TO_CANVAS } from './actionTypes';
+
+export const drawToCanvas = ({ x, y, prevX, prevY }: DrawMessage): WhiteboardActionTypes => ({
   type: DRAW_TO_CANVAS,
   payload: { x, y, prevX, prevY },
+});
+
+export const remoteDrawToCanvas = ({
+  remoteX,
+  remoteY,
+  prevRemoteX,
+  prevRemoteY,
+}: RemoteDrawMessage): WhiteboardActionTypes => ({
+  type: REMOTE_DRAW_TO_CANVAS,
+  payload: { remoteX, remoteY, prevRemoteX, prevRemoteY },
 });
 
 export const mouseDown = ({ x, y }: DrawMessage): WhiteboardActionTypes => ({
@@ -41,26 +50,26 @@ export const remoteMouseUp = (): WhiteboardActionTypes => ({
 });
 
 export const remoteMouseDown = ({
-  x,
-  y,
-}: DrawMessage): WhiteboardActionTypes => ({
+  remoteX,
+  remoteY,
+}: RemoteDrawMessage): WhiteboardActionTypes => ({
   type: REMOTE_MOUSE_DOWN,
-  payload: { x, y },
+  payload: { remoteX, remoteY },
 });
 
 export const emptyAction = (): WhiteboardActionTypes => ({
   type: EMPTY_ACTION,
 });
 
-export const setLocalStream = (
-  message: SetLocalStreamMessage
-): SetStreamActions => ({
+export const setLocalStream = (message: SetLocalStreamMessage): SetStreamActions => ({
   type: SET_LOCAL_STREAM,
   payload: message,
 });
-export const setRemoteStream = (
-  message: SetRemoteStreamMessage
-): SetStreamActions => ({
+export const setRemoteStream = (message: SetRemoteStreamMessage): SetStreamActions => ({
   type: SET_REMOTE_STREAM,
   payload: message,
+});
+
+export const toggleSidebar = (): DashboardActionTypes => ({
+  type: TOGGLE_SIDEBAR,
 });
