@@ -6,15 +6,17 @@ import './App.css';
 import Whiteboard from './components/Whiteboard';
 import VideoCanvas from './components/VideoCanvas';
 import Sidebar from './components/SideBar';
+import SideBarWrapper from './components/SideBarWrapper';
+import BottomBarWrapper from './components/BottomBarWrapper';
+import TextEditor from './components/TextEditor';
+import Workspace from './components/Workspace';
 import NavBar from './components/NavBar';
-import MainWrapper from './components/MainWrapper';
 
 function App() {
   return (
     <div className="App">
       <NavBar />
-      <VideoCanvas />
-      <MainWrapper />
+      <Workspace />
       {/* <Sidebar /> */}
       {/* <Whiteboard /> */}
     </div>

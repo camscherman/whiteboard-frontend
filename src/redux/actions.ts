@@ -18,7 +18,15 @@ import {
   SetLocalStreamMessage,
 } from './store/videoStreams/types';
 
-import { DashboardActionTypes, TOGGLE_SIDEBAR } from './store/dashboard/types';
+import { NotePadActions, POST_NOTE } from './store/notePad/types';
+
+import {
+  DashboardActionTypes,
+  TOGGLE_SIDEBAR,
+  TOGGLE_SIDEBAR_DARK,
+  TOGGLE_BOTTOMBAR_OPEN,
+  TOGGLE_BOTTOMBAR_DARK,
+} from './store/dashboard/types';
 import { REMOTE_DRAW_TO_CANVAS } from './actionTypes';
 
 export const drawToCanvas = ({ x, y, prevX, prevY }: DrawMessage): WhiteboardActionTypes => ({
@@ -72,4 +80,21 @@ export const setRemoteStream = (message: SetRemoteStreamMessage): SetStreamActio
 
 export const toggleSidebar = (): DashboardActionTypes => ({
   type: TOGGLE_SIDEBAR,
+});
+
+export const toggleSidebarDark = (): DashboardActionTypes => ({
+  type: TOGGLE_SIDEBAR_DARK,
+});
+
+export const toggleBottomBarOpen = (): DashboardActionTypes => ({
+  type: TOGGLE_BOTTOMBAR_OPEN,
+});
+
+export const toggleBottomBarDark = (): DashboardActionTypes => ({
+  type: TOGGLE_BOTTOMBAR_DARK,
+});
+
+export const postNotePadNote = (note: string): NotePadActions => ({
+  type: POST_NOTE,
+  payload: note,
 });
