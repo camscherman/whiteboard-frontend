@@ -5,8 +5,20 @@ import {
   WhiteboardActionTypes,
   RemoteDrawMessage,
 } from '../redux/store/whiteboardCanvas/types';
+import {
+  CONNECT,
+  VideoConnectionActions,
+  SetStreamActions,
+  SetLocalStreamMessage,
+} from '../redux/store/videoStreams/types';
 import { Socket, Channel } from 'phoenix';
-import { remoteMouseDown, remoteMouseUp, remoteDrawToCanvas, emptyAction } from '../redux/actions';
+import {
+  remoteMouseDown,
+  remoteMouseUp,
+  remoteDrawToCanvas,
+  emptyAction,
+  setLocalStream,
+} from '../redux/actions';
 import { RootState } from '../redux/reducers/index';
 import { select, put, take, fork, takeEvery, all, call, apply } from 'redux-saga/effects';
 import { eventChannel } from 'redux-saga';
@@ -36,9 +48,9 @@ export function joinChannel(socket: Socket, channelName: string): Channel {
 const socket = socketConnection();
 const channel = joinChannel(socket, 'call:peer2peer');
 
-export const getLocalDrawing = (state: RootState): Boolean => state.whiteboardCanvas.localDrawing;
+export const getLocalDrawing = (state: RootState): boolean => state.whiteboardCanvas.localDrawing;
 
-export const getRemoteDrawing = (state: RootState): Boolean => state.whiteboardCanvas.remoteDrawing;
+export const getRemoteDrawing = (state: RootState): boolean => state.whiteboardCanvas.remoteDrawing;
 
 export const createSocketChannel = (
   channel: Channel,
@@ -177,6 +189,18 @@ export function* watchMouseUp(channel: Channel) {
   yield takeEvery(MOUSE_UP, postMouseUp, channel);
 }
 
+function* handleConnectVideo() {
+  const localStream = yield navigator.mediaDevices.getUserMedia({
+    audio: true,
+    video: true,
+  });
+  yield put(setLocalStream({ localStream: localStream }));
+}
+
+export function* watchConnectVideo() {
+  yield takeEvery(CONNECT, handleConnectVideo);
+}
+
 export function* handleUpdatedData(action: WhiteboardActionTypes) {
   yield put(action);
 }
@@ -187,5 +211,6 @@ export default function* rootSaga() {
     watchDrawToCanvas(channel),
     watchMouseDown(channel),
     watchMouseUp(channel),
+    watchConnectVideo(),
   ]);
 }

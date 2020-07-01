@@ -2,7 +2,17 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleBottomBarOpen, toggleBottomBarDark } from '../redux/actions';
-import { getBottomBarOpen, getBottomBarDark } from '../redux/selectors';
+import { getBottomBarOpen, getBottomBarDark, getSidebarOpen } from '../redux/selectors';
+
+function bottomBarHeight(className: string): string {
+  if (className.includes('open')) {
+    return 'calc(100vh - 120px)';
+  } else if (className.includes('hidden')) {
+    return '0px';
+  } else {
+    return '60px';
+  }
+}
 
 const BottomBarDiv = styled.div`
   background-color: ${props =>
@@ -13,10 +23,7 @@ const BottomBarDiv = styled.div`
     props.className != undefined && !props.className.includes('dark')
       ? 'solid 0.5px black'
       : 'none'};
-  height: ${props =>
-    props.className != undefined && props.className.includes('open')
-      ? 'calc(100vh - 120px)'
-      : '60px'};
+  height: ${props => props.className != undefined && bottomBarHeight(props.className)};
   transition: border 1s, background-color 0.5s linear 0.5s, height 1s;
   transition-delay: height 1s;
   width: 100vw;
@@ -64,13 +71,21 @@ function setIconClass(bottomBarOpen: boolean, bottomBarDark: boolean): string {
   return cls;
 }
 
-function setBottomBarClass(bottomBarOpen: boolean, bottomBarDark: boolean): string {
+function setBottomBarClass(
+  bottomBarOpen: boolean,
+  bottomBarDark: boolean,
+  sideBarOpen: boolean
+): string {
   let cls = '';
   if (bottomBarOpen) {
     cls = 'open';
   }
   if (bottomBarDark) {
     cls += ' dark';
+  }
+
+  if (sideBarOpen) {
+    cls += ' hidden';
   }
   return cls;
 }
@@ -79,8 +94,9 @@ export default function BottomBar() {
   const dispatch = useDispatch();
   const bottomBarOpen = useSelector(getBottomBarOpen);
   const bottomBarDark = useSelector(getBottomBarDark);
+  const sideBarOpen = useSelector(getSidebarOpen);
   return (
-    <BottomBarDiv className={setBottomBarClass(bottomBarOpen, bottomBarDark)}>
+    <BottomBarDiv className={setBottomBarClass(bottomBarOpen, bottomBarDark, sideBarOpen)}>
       <IconDiv
         onClick={() => {
           dispatch(toggleBottomBarOpen());

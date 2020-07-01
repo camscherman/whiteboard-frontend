@@ -3,22 +3,19 @@ import {
   SET_REMOTE_STREAM,
   VideoStreamState,
   SetStreamActions,
-} from "../store/videoStreams/types";
+} from '../store/videoStreams/types';
 
 const initialState: VideoStreamState = {
-  localStream: "",
-  remoteStream: "",
+  localStream: undefined,
+  remoteStream: undefined,
 };
 
-export default function (
-  state = initialState,
-  action: SetStreamActions
-): VideoStreamState {
+export default function (state = initialState, action: SetStreamActions): VideoStreamState {
   switch (action.type) {
     case SET_LOCAL_STREAM:
-      return { ...state };
+      return { ...state, localStream: action.payload.localStream };
     case SET_REMOTE_STREAM:
-      return { ...state };
+      return { ...state, remoteStream: action.payload.remoteStream };
     default:
       return state;
   }

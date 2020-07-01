@@ -13,9 +13,11 @@ import {
 import {
   SET_LOCAL_STREAM,
   SET_REMOTE_STREAM,
+  CONNECT,
   SetStreamActions,
   SetRemoteStreamMessage,
   SetLocalStreamMessage,
+  VideoConnectionActions,
 } from './store/videoStreams/types';
 
 import { NotePadActions, POST_NOTE } from './store/notePad/types';
@@ -78,6 +80,9 @@ export const setRemoteStream = (message: SetRemoteStreamMessage): SetStreamActio
   payload: message,
 });
 
+export const connectVideo = (): VideoConnectionActions => ({
+  type: CONNECT,
+});
 export const toggleSidebar = (): DashboardActionTypes => ({
   type: TOGGLE_SIDEBAR,
 });

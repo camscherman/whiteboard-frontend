@@ -1,25 +1,31 @@
-export const SET_LOCAL_STREAM = "SET_LOCAL_STREAM";
-export const SET_REMOTE_STREAM = "SET_REMOTE_STREAM";
+export const SET_LOCAL_STREAM = 'SET_LOCAL_STREAM';
+export const SET_REMOTE_STREAM = 'SET_REMOTE_STREAM';
+export const CONNECT = 'CONNECT';
 
 export interface VideoStreamState {
-  localStream?: string;
-  remoteStream?: string;
+  localStream?: MediaStream;
+  remoteStream?: MediaStream;
 }
 export interface SetLocalStreamMessage {
-  localStream: string;
+  localStream: MediaStream;
 }
 
 export interface SetRemoteStreamMessage {
-  remoteStream: string;
+  remoteStream: MediaStream;
 }
 interface SetRemoteStreamAction {
   type: typeof SET_REMOTE_STREAM;
-  payload: VideoStreamState;
+  payload: SetRemoteStreamMessage;
 }
 
 interface SetLocalStreamAction {
   type: typeof SET_LOCAL_STREAM;
-  payload: VideoStreamState;
+  payload: SetLocalStreamMessage;
+}
+
+interface ConnectAction {
+  type: typeof CONNECT;
 }
 
 export type SetStreamActions = SetLocalStreamAction | SetRemoteStreamAction;
+export type VideoConnectionActions = ConnectAction;

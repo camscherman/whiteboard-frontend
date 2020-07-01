@@ -2,6 +2,8 @@ import * as React from 'react';
 import styled from 'styled-components';
 import BottomBar from './BottonBar';
 import VerticalClearPane from './VerticalClearPane';
+import { useSelector } from 'react-redux';
+import { getBottomBarOpen } from '../redux/selectors';
 
 const BottomWrapperDiv = styled.div`
   background-color: transparent;
@@ -11,12 +13,13 @@ const BottomWrapperDiv = styled.div`
   position: absolute;
   top: 120px;
   flex-direction: column;
-  z-index: 1;
+  z-index: ${props => (props.className != 'undefined' && props.className == 'open' ? 2 : 1)};
 `;
 
 export default function BottomBarWrapper() {
+  const bottomBarOpen = useSelector(getBottomBarOpen);
   return (
-    <BottomWrapperDiv>
+    <BottomWrapperDiv className={bottomBarOpen ? 'open' : 'closed'}>
       <VerticalClearPane />
       <BottomBar />
     </BottomWrapperDiv>

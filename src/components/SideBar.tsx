@@ -2,9 +2,19 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleSidebar, toggleSidebarDark } from '../redux/actions';
-import { getSidebarOpen, getSidebarDark } from '../redux/selectors';
+import { getSidebarOpen, getSidebarDark, getBottomBarOpen } from '../redux/selectors';
 import Whiteboard from './Whiteboard';
 import TextEditor from './TextEditor';
+
+function sideBarWidth(className: string): string {
+  if (className.includes('hidden')) {
+    return '0px';
+  } else if (className.includes('open')) {
+    return 'calc(100vw - 20px)';
+  } else {
+    return '70px';
+  }
+}
 
 const SidebarDiv = styled.div`
   background-color: ${props =>
@@ -13,10 +23,7 @@ const SidebarDiv = styled.div`
       : 'rgba(0,0,45,0.6)'};
   height: 100vh;
   margin-left: auto;
-  width: ${props =>
-    props.className != undefined && props.className.includes('open')
-      ? `calc(100vw - 20px)`
-      : '5vw'};
+  width: ${props => props.className != undefined && sideBarWidth(props.className)};
   transition: width 1s, background-color 1s linear 0.5s;
   display: flex;
   border-left: solid rgba(0, 0, 0, 0.7) 0.5px;
@@ -57,13 +64,17 @@ const IconDiv = styled.div`
   border-color: ${props =>
     props.className != undefined && props.className.includes('dark') ? 'black' : 'white'};
 `;
-function setSidebarClass(sidebarOpen: boolean, sidebarDark: boolean) {
+
+function setSidebarClass(sidebarOpen: boolean, sidebarDark: boolean, bottomBarOpen: boolean) {
   let cls = 'sidebar';
   if (sidebarOpen) {
     cls = cls + ' open';
   }
   if (sidebarDark) {
     cls = cls + ' dark';
+  }
+  if (bottomBarOpen) {
+    cls = cls + ' hidden';
   }
   return cls;
 }
@@ -82,9 +93,10 @@ function setOpenIconClass(sidebarOpen: boolean, sidebarDark: boolean) {
 export default function SideBar() {
   const sideBarOpen = useSelector(getSidebarOpen);
   const sideBarDark = useSelector(getSidebarDark);
+  const bottomBarOpen = useSelector(getBottomBarOpen);
   const dispatch = useDispatch();
   return (
-    <SidebarDiv className={setSidebarClass(sideBarOpen, sideBarDark)}>
+    <SidebarDiv className={setSidebarClass(sideBarOpen, sideBarDark, bottomBarOpen)}>
       <IconDiv className={sideBarDark ? 'light' : 'dark'}>
         <OpenIcon
           className={setOpenIconClass(sideBarOpen, sideBarDark)}

@@ -2,7 +2,7 @@ import { RootState } from './reducers/index';
 import { WhiteboardCanvasState } from './store/whiteboardCanvas/types';
 import { DashboardState } from './store/dashboard/types';
 import { NotePadState } from './store/notePad/types';
-// import {VideoStreamState} from "./store/videoStreams/types";
+import { VideoStreamState } from './store/videoStreams/types';
 
 export const getWhiteboardCanvasState = (store: RootState): WhiteboardCanvasState =>
   store.whiteboardCanvas;
@@ -45,3 +45,7 @@ export const getBottomBarDark = (store: RootState): boolean =>
 
 export const getNotePadState = (store: RootState): NotePadState => store.notePad;
 export const getNotePadNotes = (store: RootState): Array<string> => getNotePadState(store).notes;
+
+export const getVideoStreamsState = (store: RootState): VideoStreamState => store.videoStreams;
+export const getLocalStream = (store: RootState): MediaStream | undefined =>
+  getVideoStreamsState(store).localStream;
