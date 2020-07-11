@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { connectVideo } from '../redux/actions';
-import { getLocalStream } from '../redux/selectors';
+import { connectVideo, callRequest } from '../redux/actions';
+import { getLocalStream, getRemoteOffer } from '../redux/selectors';
 
 import styled from 'styled-components';
 const ConnectionButton = styled.button`
@@ -20,6 +20,8 @@ const ConnectionButton = styled.button`
   margin-left: 80px;
   transition: all 0.5s;
   margin-top: 10px;
+  visibility: ${props =>
+    props.className != undefined && props.className.includes('hidden') ? 'hidden' : 'visible'};
 
   &:hover {
     background-color: red;
@@ -91,6 +93,7 @@ export default function VideoCanvas() {
   const localVideoRef = React.useRef<HTMLVideoElement>(null);
   const dispatch = useDispatch();
   const localVideoStream = useSelector(getLocalStream);
+  const remoteOffer = useSelector(getRemoteOffer);
 
   useEffect(() => {
     const localVideo = localVideoRef.current;
@@ -109,8 +112,11 @@ export default function VideoCanvas() {
         >
           Connect
         </ConnectionButton>
-        <ConnectionButton>Call</ConnectionButton>
+        <ConnectionButton onClick={() => dispatch(callRequest())}>Call</ConnectionButton>
         <ConnectionButton>Disconnect</ConnectionButton>
+        <ConnectionButton className={remoteOffer == undefined ? 'hidden' : ''}>
+          Answer
+        </ConnectionButton>
       </ControlsRow>
       <VideoContainer></VideoContainer>
       <BottomSection>
@@ -120,6 +126,7 @@ export default function VideoCanvas() {
               ref={localVideoRef}
               id={'local-stream'}
               autoPlay
+              muted
               height={'100px'}
               width={'130px'}
             />

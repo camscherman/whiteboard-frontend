@@ -49,3 +49,9 @@ export const getNotePadNotes = (store: RootState): Array<string> => getNotePadSt
 export const getVideoStreamsState = (store: RootState): VideoStreamState => store.videoStreams;
 export const getLocalStream = (store: RootState): MediaStream | undefined =>
   getVideoStreamsState(store).localStream;
+export const getRemoteStream = (store: RootState): MediaStream | undefined =>
+  getVideoStreamsState(store).remoteStream;
+export const getPeerConnection = (store: RootState): RTCPeerConnection | undefined =>
+  getVideoStreamsState(store).peerConnection;
+export const getRemoteOffer = (store: RootState): RTCSessionDescriptionInit | undefined =>
+  getVideoStreamsState(store).remoteOffer;

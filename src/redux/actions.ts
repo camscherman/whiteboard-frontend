@@ -14,10 +14,16 @@ import {
   SET_LOCAL_STREAM,
   SET_REMOTE_STREAM,
   CONNECT,
-  SetStreamActions,
+  EMPTY_VIDEO_ACTION,
+  VideoStreamActions,
   SetRemoteStreamMessage,
+  SetPeerConnectionMessage,
   SetLocalStreamMessage,
   VideoConnectionActions,
+  SET_PEER_CONNECTION,
+  CALL,
+  SET_REMOTE_OFFER,
+  SetRemoteOfferMessage,
 } from './store/videoStreams/types';
 
 import { NotePadActions, POST_NOTE } from './store/notePad/types';
@@ -71,17 +77,35 @@ export const emptyAction = (): WhiteboardActionTypes => ({
   type: EMPTY_ACTION,
 });
 
-export const setLocalStream = (message: SetLocalStreamMessage): SetStreamActions => ({
+export const emptyVideoAction = (): VideoStreamActions => ({
+  type: EMPTY_VIDEO_ACTION,
+});
+
+export const setLocalStream = (message: SetLocalStreamMessage): VideoStreamActions => ({
   type: SET_LOCAL_STREAM,
   payload: message,
 });
-export const setRemoteStream = (message: SetRemoteStreamMessage): SetStreamActions => ({
+export const setRemoteStream = (message: SetRemoteStreamMessage): VideoStreamActions => ({
   type: SET_REMOTE_STREAM,
   payload: message,
 });
 
 export const connectVideo = (): VideoConnectionActions => ({
   type: CONNECT,
+});
+
+export const callRequest = (): VideoConnectionActions => ({
+  type: CALL,
+});
+
+export const setPeerConnection = (message: SetPeerConnectionMessage): VideoStreamActions => ({
+  type: SET_PEER_CONNECTION,
+  payload: message,
+});
+
+export const setRemoteOffer = (message: SetRemoteOfferMessage): VideoStreamActions => ({
+  type: SET_REMOTE_OFFER,
+  payload: message,
 });
 export const toggleSidebar = (): DashboardActionTypes => ({
   type: TOGGLE_SIDEBAR,
