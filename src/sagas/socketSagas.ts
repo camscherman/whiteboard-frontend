@@ -8,10 +8,13 @@ import {
 import {
   CONNECT,
   CALL,
+  SET_REMOTE_OFFER,
+  ANSWER_CALL,
   VideoConnectionActions,
   VideoStreamActions,
   SetLocalStreamMessage,
   SetPeerConnectionMessage,
+  ADD_ICE_CANDIDATE,
 } from '../redux/store/videoStreams/types';
 import { Socket, Channel } from 'phoenix';
 import {
@@ -24,22 +27,48 @@ import {
   setRemoteStream,
   setPeerConnection,
   setRemoteOffer,
+  addIceCandidate,
+  setConnectionEstablished,
 } from '../redux/actions';
 import { RootState } from '../redux/reducers/index';
-import { select, put, take, fork, takeEvery, all, call, apply } from 'redux-saga/effects';
+import {
+  select,
+  put,
+  take,
+  fork,
+  takeEvery,
+  all,
+  call,
+  apply,
+  cancelled,
+} from 'redux-saga/effects';
 import { eventChannel, EventChannel } from 'redux-saga';
 import socketConnection from '../socketConnection';
-import { PEER_MESSAGE, VIDEO_PEER_MESSAGE, VIDEO_OFFER } from '../socket/socketActionTypes';
+import {
+  PEER_MESSAGE,
+  VIDEO_PEER_MESSAGE,
+  VIDEO_OFFER,
+  VIDEO_ANSWER,
+  ICE_CANDIDATE,
+} from '../socket/socketActionTypes';
 import {
   drawEvent,
   mouseDown,
   mouseUp,
   socketIceCandidate,
   videoOffer,
+  videoAnswer,
   SocketEvents,
   VideoSocketEvents,
 } from '../socket/socketActions';
-import { getRemoteStream, getPeerConnection } from '../redux/selectors';
+import {
+  getRemoteStream,
+  getPeerConnection,
+  getRemoteOffer,
+  getCallRequestSent,
+  getIceCandidate,
+} from '../redux/selectors';
+import { SET_REMOTE_STREAM } from '../redux/actionTypes';
 
 interface SocketMessage {
   body: string;
@@ -109,25 +138,25 @@ export const createVideoSocketChannel = (
     return unsubscribe;
   });
 // Notes: Can not get this to work --- Debug later
-function createGenericChannel<U, T>(channel: Channel, constant: string, fn: <T, U>(event: T) => U) {
-  return eventChannel(emit => {
-    const eventHandler = <T>(event: T) => {
-      emit(fn(event));
-    };
-    channel.on(constant, eventHandler);
-    const unsubscribe = () => {
-      channel.off(constant);
-    };
-    return unsubscribe;
-  });
-}
-interface GenericChannelConstructor<T, U> {
-  (channel: Channel, constant: string, fn: <T, U>(event: T) => U): any;
-}
-const createVideoChannel: GenericChannelConstructor<
-  SocketMessage,
-  WhiteboardActionTypes
-> = createGenericChannel;
+// function createGenericChannel<U, T>(channel: Channel, constant: string, fn: <T, U>(event: T) => U) {
+//   return eventChannel(emit => {
+//     const eventHandler = <T>(event: T) => {
+//       emit(fn(event));
+//     };
+//     channel.on(constant, eventHandler);
+//     const unsubscribe = () => {
+//       channel.off(constant);
+//     };
+//     return unsubscribe;
+//   });
+// }
+// interface GenericChannelConstructor<T, U> {
+//   (channel: Channel, constant: string, fn: <T, U>(event: T) => U): any;
+// }
+// const createVideoChannel: GenericChannelConstructor<
+//   SocketMessage,
+//   WhiteboardActionTypes
+// > = createGenericChannel;
 
 const SOCKET_DRAW_EVENT = 'draw-event';
 interface SocketDrawMessage {
@@ -185,10 +214,51 @@ export function* handleUpdatedData(action: WhiteboardActionTypes) {
   yield put(action);
 }
 
-export function* handleUpdatedVideoData(action: VideoConnectionActions) {
-  yield put(action);
+export function* addIceCandidateToPeerCandidate() {
+  const iceCandidate = yield select(getIceCandidate);
+  const peerConnection = yield select(getPeerConnection);
+  const candidate = new RTCIceCandidate(iceCandidate);
+  debugger;
+  peerConnection.addIceCandidate(candidate).catch((e: any) => {
+    console.error(e);
+  });
+  // try {
+  //   // yield call([peerConnection, peerConnection.addIceCandidate], candidate);
+  //   debugger;
+  // } catch (e) {
+  //   debugger;
+  //   console.log('Error adding ice candidate', e);
+  // }
 }
+
+function* handleRemoteOffer(channel: Channel) {
+  debugger;
+  const peerConnection = yield select(getPeerConnection);
+  const remoteOffer = yield select(getRemoteOffer);
+  if (peerConnection !== undefined && remoteOffer !== undefined) {
+    const remoteDescription = new RTCSessionDescription(remoteOffer);
+    yield call([peerConnection, peerConnection.setRemoteDescription], remoteDescription);
+    const callRequestSent = yield select(getCallRequestSent);
+    if (!callRequestSent) {
+      const answer = yield call([peerConnection, peerConnection.createAnswer]);
+      yield call([peerConnection, peerConnection.setLocalDescription], answer);
+      yield fork(pushToVideoSocketChannel, channel, videoAnswer(peerConnection.localDescription));
+    }
+    yield put(setConnectionEstablished());
+  }
+}
+
+export function* handleUpdatedVideoData(action: VideoStreamActions, channel: Channel) {
+  yield put(action);
+  if (action.type == ADD_ICE_CANDIDATE) {
+    yield fork(addIceCandidateToPeerCandidate);
+  } else if (action.type == SET_REMOTE_OFFER) {
+    yield fork(handleRemoteOffer, channel);
+  }
+}
+
 /*
+
 
 async function answerCall(offer) {
   receiveRemote(offer);
@@ -207,12 +277,16 @@ function receiveRemote(offer) {
 */
 
 function handleVideoPeerMessage(payload: SocketMessage): VideoStreamActions {
-  debugger;
   const { body } = payload;
   const message: VideoSocketEvents = JSON.parse(body);
   switch (message.type) {
     case VIDEO_OFFER:
+    case VIDEO_ANSWER:
       return setRemoteOffer({ remoteOffer: message.content });
+    case ICE_CANDIDATE:
+      if (message.content != null) {
+        return addIceCandidate(message.content);
+      }
     default:
       return emptyVideoAction();
   }
@@ -240,13 +314,12 @@ function* connectWithVideoChatSocket(channel: Channel) {
   );
   while (true) {
     const action = yield take(socketChannel);
-    yield fork(handleUpdatedVideoData, action);
+    yield fork(handleUpdatedVideoData, action, channel);
   }
 }
 // VideoSocketEvents | SocketEvents
 function initializePushToChannel<T>(topLevelMessage: string) {
   return function* pushToChannel(channel: Channel, message: T) {
-    debugger;
     const payload = {
       body: JSON.stringify(message),
     };
@@ -301,34 +374,83 @@ export function* watchMouseUp(channel: Channel) {
   yield takeEvery(MOUSE_UP, postMouseUp, channel);
 }
 
-function* handleOnTrack(event: RTCTrackEvent) {
-  const remoteStream = yield select(getRemoteStream);
-  remoteStream.addTrack(event.track);
+// function* handleOnTrack(event: RTCTrackEvent) {
+//   const remoteStream = yield select(getRemoteStream);
+//   remoteStream.addTrack(event.track);
+// }
+
+function createOnTrackChannel(peerConnection: RTCPeerConnection) {
+  return eventChannel(emit => {
+    const trackHandler = (event: RTCTrackEvent) => {
+      emit(event);
+    };
+    peerConnection.ontrack = trackHandler;
+    const unsubscribe = () => {
+      peerConnection.close();
+    };
+    return unsubscribe;
+  });
 }
 
-function handleIceCandidate(channel: Channel) {
-  // if (!!event.candidate) {
-  //   pushPeerMessage('ice-candidate', event.candidate);
-  // }
-  return function* (event: RTCPeerConnectionIceEvent) {
-    yield fork(pushToSocketChannel, channel, socketIceCandidate(event));
-  };
+function* handleOnTrack(peerConnection: RTCPeerConnection) {
+  const trackChannel = yield call(createOnTrackChannel, peerConnection);
+  try {
+    const event = yield take(trackChannel);
+    const track = event.track;
+    if (event && event.track) {
+      const remoteStream = yield select(getRemoteStream);
+      yield call([remoteStream, remoteStream.addTrack], track);
+    }
+    console.log('Event', event);
+  } catch (e) {
+    debugger;
+  }
 }
 
+function createIceCandidateChannel(peerConnection: RTCPeerConnection) {
+  return eventChannel(emit => {
+    const iceCandidateHandler = (event: RTCPeerConnectionIceEvent) => {
+      emit(event);
+    };
+    peerConnection.onicecandidate = iceCandidateHandler;
+    const unsubscribe = () => {
+      peerConnection.close();
+    };
+    return unsubscribe;
+  });
+}
+function* handleIceCandidate(peerConnection: RTCPeerConnection, channel: Channel) {
+  const iceCandidateChannnel = yield call(createIceCandidateChannel, peerConnection);
+  try {
+    const event = yield take(iceCandidateChannnel);
+    yield fork(pushToVideoSocketChannel, channel, socketIceCandidate(event));
+  } catch (e) {
+    if (yield cancelled()) {
+      iceCandidateChannnel.close();
+    }
+  }
+}
 function* createPeerConnection(stream: MediaStream, channel: Channel) {
   const pc = new RTCPeerConnection({
     iceServers: [{ urls: 'stun:stun.stunprotocol.org' }],
   });
-  pc.ontrack = handleOnTrack;
-  pc.onicecandidate = handleIceCandidate(channel);
-  stream.getTracks().forEach(track => pc.addTrack(track));
+  // pc.ontrack = handleOnTrack;
+  yield fork(handleOnTrack, pc);
+  yield fork(handleIceCandidate, pc, channel);
+
+  // pc.onicecandidate = handleIceCandidate;
+  // const iceCandidateChannnel = yield call(createIceCandidateChannel, pc);
+  stream.getTracks().forEach(track => {
+    pc.addTrack(track);
+  });
+
   yield put(setPeerConnection({ peerConnection: pc }));
 }
 
 function* handleConnectVideo(channel: Channel) {
   const mediaDevices = navigator.mediaDevices;
   const localStream = yield call([mediaDevices, mediaDevices.getUserMedia], {
-    audio: true,
+    audio: false,
     video: true,
   });
   const remoteStream = new MediaStream();
@@ -345,14 +467,54 @@ function* handleCallRequest(channel: Channel) {
   const pc: RTCPeerConnection | undefined = yield select(getPeerConnection);
   if (pc != undefined) {
     const offer: RTCSessionDescriptionInit = yield call([pc, pc.createOffer]);
-    pc.setLocalDescription(offer);
+    yield call([pc, pc.setLocalDescription], offer);
+    // pc.setLocalDescription(offer);
     yield fork(pushToVideoSocketChannel, channel, videoOffer(offer));
   }
 }
 
+function* handleSetRemoteOffer(channel: Channel) {
+  const remoteOffer = yield select(getRemoteOffer);
+  const callRequestSent = yield select(getCallRequestSent);
+  if (true) {
+    const peerConnection = yield select(getPeerConnection);
+    const remoteDescription = new RTCSessionDescription(remoteOffer);
+    yield call([peerConnection, peerConnection.setRemoteDescription], remoteDescription);
+  }
+}
+
+export function* watchSetRemoteOffer(channel: Channel) {
+  yield takeEvery(SET_REMOTE_OFFER, handleSetRemoteOffer, channel);
+}
+// export function* watchAnswerRequest(channel: Channel) {
+//   yield takeEvery(ANSWER_CALL, handleAnswerCall, channel);
+// }
+
 export function* watchCallRequest(channel: Channel) {
   yield takeEvery(CALL, handleCallRequest, channel);
 }
+
+export function* watchIceCandidate() {
+  const candidate = yield select(getIceCandidate);
+  if (candidate != undefined) {
+    // do the update stuff
+    console.log('Update this!!!');
+  }
+}
+
+// export function* handleAddIceCandidate(channel: Channel, event: any) {
+//   debugger;
+//   const candidate = new RTCIceCandidate(event);
+//   debugger;
+// }
+// export function* watchAddIceCandidate(channel: Channel) {
+//   while (true) {
+//     const action = take(ADD_ICE_CANDIDATE);
+//     yield fork(handleAddIceCandidate, channel, action);
+//   }
+//   debugger;
+//   // yield takeEvery(ADD_ICE_CANDIDATE, handleAddIceCandidate, channel, event);
+// }
 
 export default function* rootSaga() {
   yield all([
@@ -363,5 +525,9 @@ export default function* rootSaga() {
     watchMouseUp(whiteboardChannel),
     watchConnectVideo(videoChannel),
     watchCallRequest(videoChannel),
+    // watchAnswerRequest(videoChannel),
+    watchSetRemoteOffer(videoChannel),
+    watchIceCandidate(),
+    // watchAddIceCandidate(videoChannel),
   ]);
 }

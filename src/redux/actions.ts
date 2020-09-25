@@ -21,9 +21,13 @@ import {
   SetLocalStreamMessage,
   VideoConnectionActions,
   SET_PEER_CONNECTION,
+  SET_CONNECTION_ESTABLISHED,
   CALL,
   SET_REMOTE_OFFER,
   SetRemoteOfferMessage,
+  ANSWER_CALL,
+  CALL_SENT,
+  ADD_ICE_CANDIDATE,
 } from './store/videoStreams/types';
 
 import { NotePadActions, POST_NOTE } from './store/notePad/types';
@@ -98,6 +102,18 @@ export const callRequest = (): VideoConnectionActions => ({
   type: CALL,
 });
 
+export const callRequestSent = (): VideoStreamActions => ({
+  type: CALL_SENT,
+});
+export const callAnswer = (): VideoConnectionActions => ({
+  type: ANSWER_CALL,
+});
+
+export const addIceCandidate = (candidate: RTCIceCandidate): VideoStreamActions => ({
+  type: ADD_ICE_CANDIDATE,
+  payload: candidate,
+});
+
 export const setPeerConnection = (message: SetPeerConnectionMessage): VideoStreamActions => ({
   type: SET_PEER_CONNECTION,
   payload: message,
@@ -106,6 +122,10 @@ export const setPeerConnection = (message: SetPeerConnectionMessage): VideoStrea
 export const setRemoteOffer = (message: SetRemoteOfferMessage): VideoStreamActions => ({
   type: SET_REMOTE_OFFER,
   payload: message,
+});
+
+export const setConnectionEstablished = (): VideoStreamActions => ({
+  type: SET_CONNECTION_ESTABLISHED,
 });
 export const toggleSidebar = (): DashboardActionTypes => ({
   type: TOGGLE_SIDEBAR,

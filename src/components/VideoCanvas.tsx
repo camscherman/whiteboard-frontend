@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { connectVideo, callRequest } from '../redux/actions';
-import { getLocalStream, getRemoteOffer } from '../redux/selectors';
+import { connectVideo, callRequest, callRequestSent, callAnswer } from '../redux/actions';
+import { getLocalStream, getRemoteOffer, getRemoteStream } from '../redux/selectors';
 
 import styled from 'styled-components';
 const ConnectionButton = styled.button`
@@ -89,16 +89,28 @@ const LocalVideoStream = styled(VideoStream)`
   transform: scaleX(-1);
 `;
 
+const RemoteVideoStream = styled(VideoStream)``;
+
 export default function VideoCanvas() {
   const localVideoRef = React.useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = React.useRef<HTMLVideoElement>(null);
   const dispatch = useDispatch();
   const localVideoStream = useSelector(getLocalStream);
+  const remoteVideoStream = useSelector(getRemoteStream);
   const remoteOffer = useSelector(getRemoteOffer);
+  const dispatchCall = () => {
+    dispatch(callRequestSent());
+    dispatch(callRequest());
+  };
 
   useEffect(() => {
     const localVideo = localVideoRef.current;
+    const remoteVideo = remoteVideoRef.current;
     if (localVideo != null && localVideoStream != undefined) {
       localVideo.srcObject = localVideoStream;
+    }
+    if (remoteVideo != null && remoteVideoStream != undefined) {
+      remoteVideo.srcObject = remoteVideoStream;
     }
   });
 
@@ -112,13 +124,24 @@ export default function VideoCanvas() {
         >
           Connect
         </ConnectionButton>
-        <ConnectionButton onClick={() => dispatch(callRequest())}>Call</ConnectionButton>
+        <ConnectionButton onClick={() => dispatchCall()}>Call</ConnectionButton>
         <ConnectionButton>Disconnect</ConnectionButton>
-        <ConnectionButton className={remoteOffer == undefined ? 'hidden' : ''}>
+        <ConnectionButton
+          onClick={() => dispatch(callAnswer())}
+          className={remoteOffer == undefined ? 'hidden' : ''}
+        >
           Answer
         </ConnectionButton>
       </ControlsRow>
-      <VideoContainer></VideoContainer>
+      <VideoContainer>
+        <RemoteVideoStream
+          ref={remoteVideoRef}
+          id={'remote-stream'}
+          autoPlay
+          height={'500px'}
+          width={'650px'}
+        />
+      </VideoContainer>
       <BottomSection>
         <VideoRow>
           <LocalVideoContainer>

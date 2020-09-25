@@ -1,4 +1,11 @@
-import { DRAW_EVENT, MOUSE_DOWN, MOUSE_UP, ICE_CANDIDATE, VIDEO_OFFER } from './socketActionTypes';
+import {
+  DRAW_EVENT,
+  MOUSE_DOWN,
+  MOUSE_UP,
+  ICE_CANDIDATE,
+  VIDEO_OFFER,
+  VIDEO_ANSWER,
+} from './socketActionTypes';
 import { DrawMessage } from '../redux/store/whiteboardCanvas/types';
 
 export interface SocketDrawMessage {
@@ -30,6 +37,11 @@ interface SocketIceCandidateEvent {
 //  The receiving party will be able to accept or reject the call
 interface VideoOfferEvent {
   type: typeof VIDEO_OFFER;
+  content: RTCSessionDescriptionInit;
+}
+
+interface VideoAnswerEvent {
+  type: typeof VIDEO_ANSWER;
   content: RTCSessionDescriptionInit;
 }
 
@@ -65,10 +77,11 @@ export const videoOffer = (offer: RTCSessionDescriptionInit): VideoOfferEvent =>
   content: offer,
 });
 
-export type VideoSocketEvents = VideoOfferEvent;
+export const videoAnswer = (answer: RTCSessionDescriptionInit): VideoAnswerEvent => ({
+  type: VIDEO_ANSWER,
+  content: answer,
+});
 
-export type SocketEvents =
-  | SocketMouseUpEvent
-  | SocketMouseDownEvent
-  | SocketDrawEvent
-  | SocketIceCandidateEvent;
+export type VideoSocketEvents = VideoOfferEvent | VideoAnswerEvent | SocketIceCandidateEvent;
+
+export type SocketEvents = SocketMouseUpEvent | SocketMouseDownEvent | SocketDrawEvent;

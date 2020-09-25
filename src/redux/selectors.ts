@@ -47,11 +47,21 @@ export const getNotePadState = (store: RootState): NotePadState => store.notePad
 export const getNotePadNotes = (store: RootState): Array<string> => getNotePadState(store).notes;
 
 export const getVideoStreamsState = (store: RootState): VideoStreamState => store.videoStreams;
+
 export const getLocalStream = (store: RootState): MediaStream | undefined =>
   getVideoStreamsState(store).localStream;
+
 export const getRemoteStream = (store: RootState): MediaStream | undefined =>
   getVideoStreamsState(store).remoteStream;
+
 export const getPeerConnection = (store: RootState): RTCPeerConnection | undefined =>
   getVideoStreamsState(store).peerConnection;
+
 export const getRemoteOffer = (store: RootState): RTCSessionDescriptionInit | undefined =>
   getVideoStreamsState(store).remoteOffer;
+
+export const getCallRequestSent = (store: RootState): boolean =>
+  getVideoStreamsState(store).callRequestSent;
+
+export const getIceCandidate = (store: RootState): RTCIceCandidate | undefined =>
+  getVideoStreamsState(store).iceCandidate;
