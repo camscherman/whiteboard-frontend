@@ -9,7 +9,6 @@ import {
   ADD_ICE_CANDIDATE,
   SET_CONNECTION_ESTABLISHED,
 } from '../store/videoStreams/types';
-import { getPeerConnection } from '../selectors';
 
 const initialState: VideoStreamState = {
   localStream: undefined,
@@ -24,10 +23,8 @@ const initialState: VideoStreamState = {
 export default function (state = initialState, action: VideoStreamActions): VideoStreamState {
   switch (action.type) {
     case SET_LOCAL_STREAM:
-      debugger;
       return { ...state, localStream: action.payload.localStream };
     case SET_REMOTE_STREAM:
-      debugger;
       return { ...state, remoteStream: action.payload.remoteStream };
     case SET_PEER_CONNECTION:
       return { ...state, peerConnection: action.payload.peerConnection };
@@ -38,7 +35,6 @@ export default function (state = initialState, action: VideoStreamActions): Vide
     case SET_CONNECTION_ESTABLISHED:
       return { ...state, remoteConnectionEstablished: true };
     case ADD_ICE_CANDIDATE:
-      debugger;
       if (action.payload.candidate != null) {
         return { ...state, iceCandidate: action.payload };
       }

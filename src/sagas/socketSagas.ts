@@ -9,11 +9,7 @@ import {
   CONNECT,
   CALL,
   SET_REMOTE_OFFER,
-  ANSWER_CALL,
-  VideoConnectionActions,
   VideoStreamActions,
-  SetLocalStreamMessage,
-  SetPeerConnectionMessage,
   ADD_ICE_CANDIDATE,
 } from '../redux/store/videoStreams/types';
 import { Socket, Channel } from 'phoenix';
@@ -42,7 +38,7 @@ import {
   apply,
   cancelled,
 } from 'redux-saga/effects';
-import { eventChannel, EventChannel } from 'redux-saga';
+import { eventChannel } from 'redux-saga';
 import socketConnection from '../socketConnection';
 import {
   PEER_MESSAGE,
@@ -68,7 +64,6 @@ import {
   getCallRequestSent,
   getIceCandidate,
 } from '../redux/selectors';
-import { SET_REMOTE_STREAM } from '../redux/actionTypes';
 
 interface SocketMessage {
   body: string;
@@ -218,17 +213,10 @@ export function* addIceCandidateToPeerCandidate() {
   const iceCandidate = yield select(getIceCandidate);
   const peerConnection = yield select(getPeerConnection);
   const candidate = new RTCIceCandidate(iceCandidate);
-  debugger;
+
   peerConnection.addIceCandidate(candidate).catch((e: any) => {
     console.error(e);
   });
-  // try {
-  //   // yield call([peerConnection, peerConnection.addIceCandidate], candidate);
-  //   debugger;
-  // } catch (e) {
-  //   debugger;
-  //   console.log('Error adding ice candidate', e);
-  // }
 }
 
 function* handleRemoteOffer(channel: Channel) {
@@ -257,25 +245,6 @@ export function* handleUpdatedVideoData(action: VideoStreamActions, channel: Cha
   }
 }
 
-/*
-
-
-async function answerCall(offer) {
-  receiveRemote(offer);
-  let answer = await peerConnection.createAnswer();
-  peerConnection
-    .setLocalDescription(answer)
-    .then(() =>
-      pushPeerMessage("video-answer", peerConnection.localDescription)
-    );
-}
-
-function receiveRemote(offer) {
-  let remoteDescription = new RTCSessionDescription(offer);
-  peerConnection.setRemoteDescription(remoteDescription);
-}
-*/
-
 function handleVideoPeerMessage(payload: SocketMessage): VideoStreamActions {
   const { body } = payload;
   const message: VideoSocketEvents = JSON.parse(body);
@@ -291,11 +260,8 @@ function handleVideoPeerMessage(payload: SocketMessage): VideoStreamActions {
       return emptyVideoAction();
   }
 }
-// Connect with the call_channel to post draw messages
-function* connectWithChatSocket(channel: Channel) {
-  // const socket = socket;
-  // const channel = yield call(joinChannel, socket, "call:peer2peer");
 
+function* connectWithChatSocket(channel: Channel) {
   const socketChannel = yield call(createSocketChannel, channel, PEER_MESSAGE, handlePeerMessage);
 
   while (true) {
@@ -314,6 +280,7 @@ function* connectWithVideoChatSocket(channel: Channel) {
   );
   while (true) {
     const action = yield take(socketChannel);
+    debugger;
     yield fork(handleUpdatedVideoData, action, channel);
   }
 }
@@ -330,15 +297,6 @@ const pushToSocketChannel = initializePushToChannel<SocketEvents>('peer-message'
 const pushToVideoSocketChannel = initializePushToChannel<VideoSocketEvents>(VIDEO_PEER_MESSAGE);
 
 export function* postDraw(channel: Channel, message: WhiteboardActionTypes) {
-  // const message = {
-  //   type: "draw-event",
-  //   content: {
-  //     previousX: prevX,
-  //     previousY: prevY,
-  //     currentX: x,
-  //     currentY: y,
-  //   },
-  // };
   if (message.type === DRAW_TO_CANVAS) {
     const { payload } = message;
     const localDrawing = yield select(getLocalDrawing);
@@ -374,11 +332,6 @@ export function* watchMouseUp(channel: Channel) {
   yield takeEvery(MOUSE_UP, postMouseUp, channel);
 }
 
-// function* handleOnTrack(event: RTCTrackEvent) {
-//   const remoteStream = yield select(getRemoteStream);
-//   remoteStream.addTrack(event.track);
-// }
-
 function createOnTrackChannel(peerConnection: RTCPeerConnection) {
   return eventChannel(emit => {
     const trackHandler = (event: RTCTrackEvent) => {
@@ -402,9 +355,7 @@ function* handleOnTrack(peerConnection: RTCPeerConnection) {
       yield call([remoteStream, remoteStream.addTrack], track);
     }
     console.log('Event', event);
-  } catch (e) {
-    debugger;
-  }
+  } catch (e) {}
 }
 
 function createIceCandidateChannel(peerConnection: RTCPeerConnection) {
@@ -438,8 +389,6 @@ function* createPeerConnection(stream: MediaStream, channel: Channel) {
   yield fork(handleOnTrack, pc);
   yield fork(handleIceCandidate, pc, channel);
 
-  // pc.onicecandidate = handleIceCandidate;
-  // const iceCandidateChannnel = yield call(createIceCandidateChannel, pc);
   stream.getTracks().forEach(track => {
     pc.addTrack(track);
   });
@@ -473,23 +422,6 @@ function* handleCallRequest(channel: Channel) {
   }
 }
 
-function* handleSetRemoteOffer(channel: Channel) {
-  const remoteOffer = yield select(getRemoteOffer);
-  const callRequestSent = yield select(getCallRequestSent);
-  if (true) {
-    const peerConnection = yield select(getPeerConnection);
-    const remoteDescription = new RTCSessionDescription(remoteOffer);
-    yield call([peerConnection, peerConnection.setRemoteDescription], remoteDescription);
-  }
-}
-
-export function* watchSetRemoteOffer(channel: Channel) {
-  yield takeEvery(SET_REMOTE_OFFER, handleSetRemoteOffer, channel);
-}
-// export function* watchAnswerRequest(channel: Channel) {
-//   yield takeEvery(ANSWER_CALL, handleAnswerCall, channel);
-// }
-
 export function* watchCallRequest(channel: Channel) {
   yield takeEvery(CALL, handleCallRequest, channel);
 }
@@ -502,20 +434,6 @@ export function* watchIceCandidate() {
   }
 }
 
-// export function* handleAddIceCandidate(channel: Channel, event: any) {
-//   debugger;
-//   const candidate = new RTCIceCandidate(event);
-//   debugger;
-// }
-// export function* watchAddIceCandidate(channel: Channel) {
-//   while (true) {
-//     const action = take(ADD_ICE_CANDIDATE);
-//     yield fork(handleAddIceCandidate, channel, action);
-//   }
-//   debugger;
-//   // yield takeEvery(ADD_ICE_CANDIDATE, handleAddIceCandidate, channel, event);
-// }
-
 export default function* rootSaga() {
   yield all([
     connectWithChatSocket(whiteboardChannel),
@@ -526,7 +444,7 @@ export default function* rootSaga() {
     watchConnectVideo(videoChannel),
     watchCallRequest(videoChannel),
     // watchAnswerRequest(videoChannel),
-    watchSetRemoteOffer(videoChannel),
+    // watchSetRemoteOffer(videoChannel),
     watchIceCandidate(),
     // watchAddIceCandidate(videoChannel),
   ]);
