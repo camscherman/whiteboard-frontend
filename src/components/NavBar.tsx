@@ -10,7 +10,7 @@ const NavbarWrapper = styled.nav`
   font-size: 0.833333rem;
   font-weight: 500;
   color: white;
-  z-index: 500;
+  z-index: 3;
 `;
 
 const NavBarMain = styled.div`

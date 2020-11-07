@@ -1,7 +1,8 @@
 import { RootState } from './reducers/index';
 import { WhiteboardCanvasState } from './store/whiteboardCanvas/types';
 import { DashboardState } from './store/dashboard/types';
-// import {VideoStreamState} from "./store/videoStreams/types";
+import { NotePadState } from './store/notePad/types';
+import { VideoStreamState } from './store/videoStreams/types';
 
 export const getWhiteboardCanvasState = (store: RootState): WhiteboardCanvasState =>
   store.whiteboardCanvas;
@@ -35,3 +36,32 @@ export const getPrevRemoteY = (store: RootState): number | undefined =>
   getWhiteboardCanvasState(store).prevRemoteY;
 
 export const getSidebarOpen = (store: RootState): boolean => getDashboardState(store).sidebarOpen;
+export const getSidebarDark = (store: RootState): boolean => getDashboardState(store).sidebarDark;
+export const getBottomBarOpen = (store: RootState): boolean =>
+  getDashboardState(store).bottomBarOpen;
+
+export const getBottomBarDark = (store: RootState): boolean =>
+  getDashboardState(store).bottomBarDark;
+
+export const getNotePadState = (store: RootState): NotePadState => store.notePad;
+export const getNotePadNotes = (store: RootState): Array<string> => getNotePadState(store).notes;
+
+export const getVideoStreamsState = (store: RootState): VideoStreamState => store.videoStreams;
+
+export const getLocalStream = (store: RootState): MediaStream | undefined =>
+  getVideoStreamsState(store).localStream;
+
+export const getRemoteStream = (store: RootState): MediaStream | undefined =>
+  getVideoStreamsState(store).remoteStream;
+
+export const getPeerConnection = (store: RootState): RTCPeerConnection | undefined =>
+  getVideoStreamsState(store).peerConnection;
+
+export const getRemoteOffer = (store: RootState): RTCSessionDescriptionInit | undefined =>
+  getVideoStreamsState(store).remoteOffer;
+
+export const getCallRequestSent = (store: RootState): boolean =>
+  getVideoStreamsState(store).callRequestSent;
+
+export const getIceCandidate = (store: RootState): RTCIceCandidate | undefined =>
+  getVideoStreamsState(store).iceCandidate;

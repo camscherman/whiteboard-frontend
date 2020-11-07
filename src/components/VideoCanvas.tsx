@@ -1,14 +1,161 @@
-import * as React from 'react';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { connectVideo, callRequest, callRequestSent, callAnswer } from '../redux/actions';
+import { getLocalStream, getRemoteOffer, getRemoteStream } from '../redux/selectors';
 
-import styled, { ThemeProvider } from 'styled-components';
+import styled from 'styled-components';
+const ConnectionButton = styled.button`
+  background-color: #2b2d2f;
+  height: 40px;
+  color: white;
+  font-family: 'Avenir Next';
+  font-size: 18px;
+  font-weight: 400;
+  min-width: 80px;
+  border-color: white;
+  border-radius: 3px;
+  border-style: solid;
+  padding: 5px 10px 5px 10px;
+  z-index: 2;
+  margin-left: 80px;
+  transition: all 0.5s;
+  margin-top: 10px;
+  visibility: ${props =>
+    props.className != undefined && props.className.includes('hidden') ? 'hidden' : 'visible'};
+
+  &:hover {
+    background-color: red;
+    border-color: black;
+    color: black;
+  }
+`;
+const VideoDiv = styled.div`
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #ff0000;
+`;
+
+const ControlsRow = styled.div`
+  width: 100%;
+  padding: 5px 15px 5px 15px;
+  height: 65px;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  margin-top: 45px;
+`;
+
+const VideoContainer = styled.div`
+  border-color: black;
+  border-width: 0.5px;
+  height: 500px;
+  width: 650px;
+  border-style: dashed;
+  margin-left: 100px;
+  margin-top: 120px;
+  position: absolute;
+  top: 0px;
+`;
+
+const VideoRow = styled.div`
+  width: 100%;
+  height: 120px;
+  display: flex;
+  position: fixed;
+  top: 620px;
+  margin-top: 5px;
+`;
+
+const LocalVideoContainer = styled.div`
+  border-color: black;
+  border-width: 0.5px;
+  height: 100px;
+  width: 130px;
+  border-style: dashed;
+  margin-left: 100px;
+`;
+
+const BottomSection = styled.div`
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 620px;
+`;
+const VideoStream = styled.video``;
+
+const LocalVideoStream = styled(VideoStream)`
+  transform: scaleX(-1);
+`;
+
+const RemoteVideoStream = styled(VideoStream)``;
 
 export default function VideoCanvas() {
-  const Button = styled.button`
-    color: 'blue';
-  `;
+  const localVideoRef = React.useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = React.useRef<HTMLVideoElement>(null);
+  const dispatch = useDispatch();
+  const localVideoStream = useSelector(getLocalStream);
+  const remoteVideoStream = useSelector(getRemoteStream);
+  const remoteOffer = useSelector(getRemoteOffer);
+  const dispatchCall = () => {
+    dispatch(callRequestSent());
+    dispatch(callRequest());
+  };
+
+  useEffect(() => {
+    const localVideo = localVideoRef.current;
+    const remoteVideo = remoteVideoRef.current;
+    if (localVideo != null && localVideoStream != undefined) {
+      localVideo.srcObject = localVideoStream;
+    }
+    if (remoteVideo != null && remoteVideoStream != undefined) {
+      remoteVideo.srcObject = remoteVideoStream;
+    }
+  });
+
   return (
-    <div className="parent-container">
-      <Button>Test</Button>
-    </div>
+    <VideoDiv>
+      <ControlsRow>
+        <ConnectionButton
+          onClick={() => {
+            dispatch(connectVideo());
+          }}
+        >
+          Connect
+        </ConnectionButton>
+        <ConnectionButton onClick={() => dispatchCall()}>Call</ConnectionButton>
+        <ConnectionButton>Disconnect</ConnectionButton>
+        <ConnectionButton
+          onClick={() => dispatch(callAnswer())}
+          className={remoteOffer == undefined ? 'hidden' : ''}
+        >
+          Answer
+        </ConnectionButton>
+      </ControlsRow>
+      <VideoContainer>
+        <RemoteVideoStream
+          ref={remoteVideoRef}
+          id={'remote-stream'}
+          autoPlay
+          height={'500px'}
+          width={'650px'}
+        />
+      </VideoContainer>
+      <BottomSection>
+        <VideoRow>
+          <LocalVideoContainer>
+            <LocalVideoStream
+              ref={localVideoRef}
+              id={'local-stream'}
+              autoPlay
+              muted
+              height={'100px'}
+              width={'130px'}
+            />
+          </LocalVideoContainer>
+        </VideoRow>
+      </BottomSection>
+    </VideoDiv>
   );
 }

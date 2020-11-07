@@ -13,12 +13,32 @@ import {
 import {
   SET_LOCAL_STREAM,
   SET_REMOTE_STREAM,
-  SetStreamActions,
+  CONNECT,
+  EMPTY_VIDEO_ACTION,
+  VideoStreamActions,
   SetRemoteStreamMessage,
+  SetPeerConnectionMessage,
   SetLocalStreamMessage,
+  VideoConnectionActions,
+  SET_PEER_CONNECTION,
+  SET_CONNECTION_ESTABLISHED,
+  CALL,
+  SET_REMOTE_OFFER,
+  SetRemoteOfferMessage,
+  ANSWER_CALL,
+  CALL_SENT,
+  ADD_ICE_CANDIDATE,
 } from './store/videoStreams/types';
 
-import { DashboardActionTypes, TOGGLE_SIDEBAR } from './store/dashboard/types';
+import { NotePadActions, POST_NOTE } from './store/notePad/types';
+
+import {
+  DashboardActionTypes,
+  TOGGLE_SIDEBAR,
+  TOGGLE_SIDEBAR_DARK,
+  TOGGLE_BOTTOMBAR_OPEN,
+  TOGGLE_BOTTOMBAR_DARK,
+} from './store/dashboard/types';
 import { REMOTE_DRAW_TO_CANVAS } from './actionTypes';
 
 export const drawToCanvas = ({ x, y, prevX, prevY }: DrawMessage): WhiteboardActionTypes => ({
@@ -61,15 +81,69 @@ export const emptyAction = (): WhiteboardActionTypes => ({
   type: EMPTY_ACTION,
 });
 
-export const setLocalStream = (message: SetLocalStreamMessage): SetStreamActions => ({
+export const emptyVideoAction = (): VideoStreamActions => ({
+  type: EMPTY_VIDEO_ACTION,
+});
+
+export const setLocalStream = (message: SetLocalStreamMessage): VideoStreamActions => ({
   type: SET_LOCAL_STREAM,
   payload: message,
 });
-export const setRemoteStream = (message: SetRemoteStreamMessage): SetStreamActions => ({
+export const setRemoteStream = (message: SetRemoteStreamMessage): VideoStreamActions => ({
   type: SET_REMOTE_STREAM,
   payload: message,
 });
 
+export const connectVideo = (): VideoConnectionActions => ({
+  type: CONNECT,
+});
+
+export const callRequest = (): VideoConnectionActions => ({
+  type: CALL,
+});
+
+export const callRequestSent = (): VideoStreamActions => ({
+  type: CALL_SENT,
+});
+export const callAnswer = (): VideoConnectionActions => ({
+  type: ANSWER_CALL,
+});
+
+export const addIceCandidate = (candidate: RTCIceCandidate): VideoStreamActions => ({
+  type: ADD_ICE_CANDIDATE,
+  payload: candidate,
+});
+
+export const setPeerConnection = (message: SetPeerConnectionMessage): VideoStreamActions => ({
+  type: SET_PEER_CONNECTION,
+  payload: message,
+});
+
+export const setRemoteOffer = (message: SetRemoteOfferMessage): VideoStreamActions => ({
+  type: SET_REMOTE_OFFER,
+  payload: message,
+});
+
+export const setConnectionEstablished = (): VideoStreamActions => ({
+  type: SET_CONNECTION_ESTABLISHED,
+});
 export const toggleSidebar = (): DashboardActionTypes => ({
   type: TOGGLE_SIDEBAR,
+});
+
+export const toggleSidebarDark = (): DashboardActionTypes => ({
+  type: TOGGLE_SIDEBAR_DARK,
+});
+
+export const toggleBottomBarOpen = (): DashboardActionTypes => ({
+  type: TOGGLE_BOTTOMBAR_OPEN,
+});
+
+export const toggleBottomBarDark = (): DashboardActionTypes => ({
+  type: TOGGLE_BOTTOMBAR_DARK,
+});
+
+export const postNotePadNote = (note: string): NotePadActions => ({
+  type: POST_NOTE,
+  payload: note,
 });
