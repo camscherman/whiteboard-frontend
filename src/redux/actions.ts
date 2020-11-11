@@ -21,13 +21,17 @@ import {
   SetLocalStreamMessage,
   VideoConnectionActions,
   SET_PEER_CONNECTION,
+  CLOSE_PEER_CONNECTION,
   SET_CONNECTION_ESTABLISHED,
   CALL,
+  JOIN_CALL,
+  DISCONNECT,
   SET_REMOTE_OFFER,
   SetRemoteOfferMessage,
   ANSWER_CALL,
   CALL_SENT,
   ADD_ICE_CANDIDATE,
+  TRY_BEGIN_CALL,
 } from './store/videoStreams/types';
 
 import { NotePadActions, POST_NOTE } from './store/notePad/types';
@@ -40,7 +44,6 @@ import {
   TOGGLE_BOTTOMBAR_DARK,
 } from './store/dashboard/types';
 import { REMOTE_DRAW_TO_CANVAS } from './actionTypes';
-
 export const drawToCanvas = ({ x, y, prevX, prevY }: DrawMessage): WhiteboardActionTypes => ({
   type: DRAW_TO_CANVAS,
   payload: { x, y, prevX, prevY },
@@ -98,8 +101,20 @@ export const connectVideo = (): VideoConnectionActions => ({
   type: CONNECT,
 });
 
+export const disconnectVideo = (): VideoStreamActions => ({
+  type: DISCONNECT,
+});
+
+export const closePeerConnection = (): VideoConnectionActions => ({
+  type: CLOSE_PEER_CONNECTION,
+});
+
 export const callRequest = (): VideoConnectionActions => ({
   type: CALL,
+});
+
+export const joinCall = (): VideoConnectionActions => ({
+  type: JOIN_CALL,
 });
 
 export const callRequestSent = (): VideoStreamActions => ({
@@ -112,6 +127,10 @@ export const callAnswer = (): VideoConnectionActions => ({
 export const addIceCandidate = (candidate: RTCIceCandidate): VideoStreamActions => ({
   type: ADD_ICE_CANDIDATE,
   payload: candidate,
+});
+
+export const tryBeginCall = (): VideoStreamActions => ({
+  type: TRY_BEGIN_CALL,
 });
 
 export const setPeerConnection = (message: SetPeerConnectionMessage): VideoStreamActions => ({
