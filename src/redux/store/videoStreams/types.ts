@@ -2,8 +2,9 @@ export const SET_LOCAL_STREAM = 'SET_LOCAL_STREAM';
 export const SET_REMOTE_STREAM = 'SET_REMOTE_STREAM';
 export const SET_PEER_CONNECTION = 'SET_PEER_CONNECTION';
 export const CONNECT = 'CONNECT';
-export const DISCONNECT = 'DISCONNECT';
-export const CLOSE_PEER_CONNECTION = 'CLOSE_PEER_CONNECTION';
+export const LOCAL_DISCONNECT = 'LOCAL_DISCONNECT';
+export const REMOTE_DISCONNECT = 'REMOTE_DISCONNECT';
+export const RESET_VIDEO_STREAM_STATE = 'RESET_VIDEO_STREAM_STATE';
 export const CALL = 'CALL';
 export const CALL_SENT = 'CALL_SENT';
 export const ANSWER_CALL = 'ANSWER_CALL';
@@ -58,8 +59,8 @@ interface SetConnectionEstablishedAction {
   type: typeof SET_CONNECTION_ESTABLISHED;
 }
 
-interface ClosePeerConnectionAction {
-  type: typeof CLOSE_PEER_CONNECTION;
+interface ResetVideoStreamStateAction {
+  type: typeof RESET_VIDEO_STREAM_STATE;
 }
 
 interface SetRemoteOfferAction {
@@ -71,8 +72,12 @@ interface ConnectAction {
   type: typeof CONNECT;
 }
 
-interface DisconnectAction {
-  type: typeof DISCONNECT;
+interface LocalDisconnectAction {
+  type: typeof LOCAL_DISCONNECT;
+}
+
+interface RemoteDisconnectAction {
+  type: typeof REMOTE_DISCONNECT;
 }
 
 interface CallAction {
@@ -112,11 +117,8 @@ export type VideoStreamActions =
   | AddIceCandidateAction
   | SetConnectionEstablishedAction
   | TryBeginCall
-  | DisconnectAction
+  | LocalDisconnectAction
+  | RemoteDisconnectAction
+  | ResetVideoStreamStateAction
   | EmptyVideoAction;
-export type VideoConnectionActions =
-  | ConnectAction
-  | CallAction
-  | AnswerAction
-  | JoinCallAction
-  | ClosePeerConnectionAction;
+export type VideoConnectionActions = ConnectAction | CallAction | AnswerAction | JoinCallAction;

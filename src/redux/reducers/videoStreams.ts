@@ -9,7 +9,9 @@ import {
   TRY_BEGIN_CALL,
   ADD_ICE_CANDIDATE,
   SET_CONNECTION_ESTABLISHED,
-  DISCONNECT,
+  LOCAL_DISCONNECT,
+  REMOTE_DISCONNECT,
+  RESET_VIDEO_STREAM_STATE,
 } from '../store/videoStreams/types';
 
 const initialState: VideoStreamState = {
@@ -31,7 +33,8 @@ export default function (state = initialState, action: VideoStreamActions): Vide
       return { ...state, joinedCall: true };
     case SET_REMOTE_STREAM:
       return { ...state, remoteStream: action.payload.remoteStream };
-    case DISCONNECT:
+    case REMOTE_DISCONNECT:
+    case LOCAL_DISCONNECT:
       return { ...state, joinedCall: false };
     case SET_PEER_CONNECTION:
       return { ...state, peerConnection: action.payload.peerConnection };
@@ -39,6 +42,8 @@ export default function (state = initialState, action: VideoStreamActions): Vide
       return { ...state, callRequestSent: true };
     case SET_REMOTE_OFFER:
       return { ...state, remoteOffer: action.payload.remoteOffer };
+    case RESET_VIDEO_STREAM_STATE:
+      return initialState;
     case SET_CONNECTION_ESTABLISHED:
       return { ...state, remoteConnectionEstablished: true };
     case ADD_ICE_CANDIDATE:

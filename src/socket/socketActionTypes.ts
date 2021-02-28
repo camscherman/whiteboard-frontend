@@ -7,3 +7,4 @@ export const ICE_CANDIDATE = 'ice-candidate';
 export const VIDEO_OFFER = 'video-offer';
 export const VIDEO_ANSWER = 'video-answer';
 export const JOINING_CALL = 'JOINING_CALL';
+export const REMOTE_DISCONNECT_MESSAGE = 'REMOTE_DISCONNECT_MESSAGE';

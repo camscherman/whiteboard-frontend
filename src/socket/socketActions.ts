@@ -6,6 +6,7 @@ import {
   VIDEO_OFFER,
   VIDEO_ANSWER,
   JOINING_CALL,
+  REMOTE_DISCONNECT_MESSAGE,
 } from './socketActionTypes';
 import { DrawMessage } from '../redux/store/whiteboardCanvas/types';
 
@@ -50,6 +51,10 @@ interface VideoAnswerEvent {
   content: RTCSessionDescriptionInit;
 }
 
+interface RemoteDisconnectEvent {
+  type: typeof REMOTE_DISCONNECT_MESSAGE;
+}
+
 export const drawEvent = (payload: DrawMessage): SocketDrawEvent => {
   const { prevX, prevY, x, y } = payload;
   return {
@@ -91,7 +96,12 @@ export const joiningCall = (): JoiningCallEvent => ({
   type: JOINING_CALL,
 });
 
+export const sendRemoteDisconnect = (): RemoteDisconnectEvent => ({
+  type: REMOTE_DISCONNECT_MESSAGE,
+});
+
 export type VideoSocketEvents =
+  | RemoteDisconnectEvent
   | VideoOfferEvent
   | VideoAnswerEvent
   | JoiningCallEvent

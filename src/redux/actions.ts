@@ -21,11 +21,12 @@ import {
   SetLocalStreamMessage,
   VideoConnectionActions,
   SET_PEER_CONNECTION,
-  CLOSE_PEER_CONNECTION,
+  RESET_VIDEO_STREAM_STATE,
   SET_CONNECTION_ESTABLISHED,
   CALL,
   JOIN_CALL,
-  DISCONNECT,
+  LOCAL_DISCONNECT,
+  REMOTE_DISCONNECT,
   SET_REMOTE_OFFER,
   SetRemoteOfferMessage,
   ANSWER_CALL,
@@ -102,11 +103,15 @@ export const connectVideo = (): VideoConnectionActions => ({
 });
 
 export const disconnectVideo = (): VideoStreamActions => ({
-  type: DISCONNECT,
+  type: LOCAL_DISCONNECT,
 });
 
-export const closePeerConnection = (): VideoConnectionActions => ({
-  type: CLOSE_PEER_CONNECTION,
+export const remoteDisconnectVideo = (): VideoStreamActions => ({
+  type: REMOTE_DISCONNECT,
+});
+
+export const resetVideoStreamState = (): VideoStreamActions => ({
+  type: RESET_VIDEO_STREAM_STATE,
 });
 
 export const callRequest = (): VideoConnectionActions => ({

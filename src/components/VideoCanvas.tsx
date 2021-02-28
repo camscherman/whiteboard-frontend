@@ -6,8 +6,15 @@ import {
   callAnswer,
   joinCall,
   disconnectVideo,
+  resetVideoStreamState,
 } from '../redux/actions';
-import { getLocalStream, getRemoteOffer, getRemoteStream, getJoinedCall } from '../redux/selectors';
+import {
+  getLocalStream,
+  getRemoteOffer,
+  getPeerConnection,
+  getRemoteStream,
+  getJoinedCall,
+} from '../redux/selectors';
 
 import styled from 'styled-components';
 const ConnectionButton = styled.button`
@@ -105,6 +112,7 @@ export default function VideoCanvas() {
   const remoteVideoStream = useSelector(getRemoteStream);
   const remoteOffer = useSelector(getRemoteOffer);
   const joinedCall = useSelector(getJoinedCall);
+  const peerConnection = useSelector(getPeerConnection);
   const dispatchCall = () => {
     dispatch(callRequestSent());
     dispatch(joinCall());
@@ -123,16 +131,25 @@ export default function VideoCanvas() {
     if (remoteVideo != null && remoteVideoStream != undefined) {
       remoteVideo.srcObject = remoteVideoStream;
     }
-    if (!joinedCall && remoteOffer != null && localVideo != null && localVideo.srcObject != null) {
+    if (
+      !joinedCall &&
+      remoteOffer != undefined &&
+      localVideo != undefined &&
+      localVideo.srcObject != null
+    ) {
       unsetVideoStream(localVideo);
     }
     if (
       !joinedCall &&
-      remoteOffer != null &&
-      remoteVideo != null &&
+      remoteOffer != undefined &&
+      remoteVideo != undefined &&
       remoteVideo.srcObject != null
     ) {
       unsetVideoStream(remoteVideo);
+      if (peerConnection != undefined) {
+        peerConnection.close();
+        dispatch(resetVideoStreamState());
+      }
     }
     // TODO - dispatch closePeerConnectionAction (calls peerConnection.close() then sets it to undefined)
   });
