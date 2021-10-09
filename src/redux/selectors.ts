@@ -54,6 +54,8 @@ export const getLocalStream = (store: RootState): MediaStream | undefined =>
 export const getRemoteStream = (store: RootState): MediaStream | undefined =>
   getVideoStreamsState(store).remoteStream;
 
+export const getJoinedCall = (store: RootState): boolean => getVideoStreamsState(store).joinedCall;
+
 export const getPeerConnection = (store: RootState): RTCPeerConnection | undefined =>
   getVideoStreamsState(store).peerConnection;
 

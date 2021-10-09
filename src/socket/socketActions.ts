@@ -5,6 +5,8 @@ import {
   ICE_CANDIDATE,
   VIDEO_OFFER,
   VIDEO_ANSWER,
+  JOINING_CALL,
+  REMOTE_DISCONNECT_MESSAGE,
 } from './socketActionTypes';
 import { DrawMessage } from '../redux/store/whiteboardCanvas/types';
 
@@ -33,6 +35,10 @@ interface SocketIceCandidateEvent {
   type: typeof ICE_CANDIDATE;
   content: RTCIceCandidate | null;
 }
+
+interface JoiningCallEvent {
+  type: typeof JOINING_CALL;
+}
 // Its possible that in the future this message will also contain text describing who the offer is from
 //  The receiving party will be able to accept or reject the call
 interface VideoOfferEvent {
@@ -43,6 +49,10 @@ interface VideoOfferEvent {
 interface VideoAnswerEvent {
   type: typeof VIDEO_ANSWER;
   content: RTCSessionDescriptionInit;
+}
+
+interface RemoteDisconnectEvent {
+  type: typeof REMOTE_DISCONNECT_MESSAGE;
 }
 
 export const drawEvent = (payload: DrawMessage): SocketDrawEvent => {
@@ -82,6 +92,19 @@ export const videoAnswer = (answer: RTCSessionDescriptionInit): VideoAnswerEvent
   content: answer,
 });
 
-export type VideoSocketEvents = VideoOfferEvent | VideoAnswerEvent | SocketIceCandidateEvent;
+export const joiningCall = (): JoiningCallEvent => ({
+  type: JOINING_CALL,
+});
+
+export const sendRemoteDisconnect = (): RemoteDisconnectEvent => ({
+  type: REMOTE_DISCONNECT_MESSAGE,
+});
+
+export type VideoSocketEvents =
+  | RemoteDisconnectEvent
+  | VideoOfferEvent
+  | VideoAnswerEvent
+  | JoiningCallEvent
+  | SocketIceCandidateEvent;
 
 export type SocketEvents = SocketMouseUpEvent | SocketMouseDownEvent | SocketDrawEvent;

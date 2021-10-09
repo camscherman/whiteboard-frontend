@@ -7,8 +7,11 @@ import {
 } from '../redux/store/whiteboardCanvas/types';
 import {
   CONNECT,
+  LOCAL_DISCONNECT,
   CALL,
+  JOIN_CALL,
   SET_REMOTE_OFFER,
+  TRY_BEGIN_CALL,
   VideoStreamActions,
   ADD_ICE_CANDIDATE,
 } from '../redux/store/videoStreams/types';
@@ -25,6 +28,8 @@ import {
   setRemoteOffer,
   addIceCandidate,
   setConnectionEstablished,
+  tryBeginCall,
+  remoteDisconnectVideo,
 } from '../redux/actions';
 import { RootState } from '../redux/reducers/index';
 import {
@@ -45,6 +50,8 @@ import {
   VIDEO_PEER_MESSAGE,
   VIDEO_OFFER,
   VIDEO_ANSWER,
+  JOINING_CALL,
+  REMOTE_DISCONNECT_MESSAGE,
   ICE_CANDIDATE,
 } from '../socket/socketActionTypes';
 import {
@@ -56,6 +63,8 @@ import {
   videoAnswer,
   SocketEvents,
   VideoSocketEvents,
+  joiningCall,
+  sendRemoteDisconnect,
 } from '../socket/socketActions';
 import {
   getRemoteStream,
@@ -180,6 +189,18 @@ interface RemoteDrawMessageContent {
 }
 type SocketMessageBody = SocketDrawMessage | SocketMouseDownMessage | SocketMouseUpMessage;
 
+// VideoSocketEvents | SocketEvents
+function initializePushToChannel<T>(topLevelMessage: string) {
+  return function* pushToChannel(channel: Channel, message: T) {
+    const payload = {
+      body: JSON.stringify(message),
+    };
+    yield apply(channel, channel.push, [topLevelMessage, payload]);
+  };
+}
+const pushToSocketChannel = initializePushToChannel<SocketEvents>('peer-message');
+const pushToVideoSocketChannel = initializePushToChannel<VideoSocketEvents>(VIDEO_PEER_MESSAGE);
+
 function handlePeerMessage(payload: SocketMessage): WhiteboardActionTypes {
   // const localDrawing = yield select(getLocalDrawing);
   const { body } = payload;
@@ -220,14 +241,13 @@ export function* addIceCandidateToPeerCandidate() {
 }
 
 function* handleRemoteOffer(channel: Channel) {
-  debugger;
   const peerConnection = yield select(getPeerConnection);
   const remoteOffer = yield select(getRemoteOffer);
   if (peerConnection !== undefined && remoteOffer !== undefined) {
     const remoteDescription = new RTCSessionDescription(remoteOffer);
     yield call([peerConnection, peerConnection.setRemoteDescription], remoteDescription);
-    const callRequestSent = yield select(getCallRequestSent);
-    if (!callRequestSent) {
+    // const callRequestSent = yield select(getCallRequestSent);x
+    if (['have-remote-offer', 'have-local-pranswer'].includes(peerConnection.signalingState)) {
       const answer = yield call([peerConnection, peerConnection.createAnswer]);
       yield call([peerConnection, peerConnection.setLocalDescription], answer);
       yield fork(pushToVideoSocketChannel, channel, videoAnswer(peerConnection.localDescription));
@@ -236,12 +256,31 @@ function* handleRemoteOffer(channel: Channel) {
   }
 }
 
+function* handleCallRequest(channel: Channel) {
+  const pc: RTCPeerConnection | undefined = yield select(getPeerConnection);
+  if (pc != undefined) {
+    const offer: RTCSessionDescriptionInit = yield call([pc, pc.createOffer]);
+    yield call([pc, pc.setLocalDescription], offer);
+    // pc.setLocalDescription(offer);
+    yield fork(pushToVideoSocketChannel, channel, videoOffer(offer));
+  }
+}
+
+export function* watchCallRequest(channel: Channel) {
+  yield takeEvery(CALL, handleCallRequest, channel);
+}
+
 export function* handleUpdatedVideoData(action: VideoStreamActions, channel: Channel) {
   yield put(action);
   if (action.type == ADD_ICE_CANDIDATE) {
     yield fork(addIceCandidateToPeerCandidate);
   } else if (action.type == SET_REMOTE_OFFER) {
     yield fork(handleRemoteOffer, channel);
+  } else if (action.type == TRY_BEGIN_CALL) {
+    const requestSent = yield select(getCallRequestSent);
+    if (requestSent) {
+      yield fork(handleCallRequest, channel);
+    }
   }
 }
 
@@ -255,7 +294,13 @@ function handleVideoPeerMessage(payload: SocketMessage): VideoStreamActions {
     case ICE_CANDIDATE:
       if (message.content != null) {
         return addIceCandidate(message.content);
+      } else {
+        return emptyVideoAction();
       }
+    case REMOTE_DISCONNECT_MESSAGE:
+      return remoteDisconnectVideo();
+    case JOINING_CALL:
+      return tryBeginCall();
     default:
       return emptyVideoAction();
   }
@@ -280,21 +325,9 @@ function* connectWithVideoChatSocket(channel: Channel) {
   );
   while (true) {
     const action = yield take(socketChannel);
-    debugger;
     yield fork(handleUpdatedVideoData, action, channel);
   }
 }
-// VideoSocketEvents | SocketEvents
-function initializePushToChannel<T>(topLevelMessage: string) {
-  return function* pushToChannel(channel: Channel, message: T) {
-    const payload = {
-      body: JSON.stringify(message),
-    };
-    yield apply(channel, channel.push, [topLevelMessage, payload]);
-  };
-}
-const pushToSocketChannel = initializePushToChannel<SocketEvents>('peer-message');
-const pushToVideoSocketChannel = initializePushToChannel<VideoSocketEvents>(VIDEO_PEER_MESSAGE);
 
 export function* postDraw(channel: Channel, message: WhiteboardActionTypes) {
   if (message.type === DRAW_TO_CANVAS) {
@@ -412,18 +445,46 @@ export function* watchConnectVideo(channel: Channel) {
   yield takeEvery(CONNECT, handleConnectVideo, channel);
 }
 
-function* handleCallRequest(channel: Channel) {
-  const pc: RTCPeerConnection | undefined = yield select(getPeerConnection);
-  if (pc != undefined) {
-    const offer: RTCSessionDescriptionInit = yield call([pc, pc.createOffer]);
-    yield call([pc, pc.setLocalDescription], offer);
-    // pc.setLocalDescription(offer);
-    yield fork(pushToVideoSocketChannel, channel, videoOffer(offer));
+function* remoteDisconnectReceived() {}
+/*
+  function unsetVideoStream(videoElement) {
+  if (videoElement.srcObject) {
+    videoElement.srcObject.getTracks().forEach((track) => track.stop());
   }
+  videoElement.removeAttribute("src");
+  videoElement.removeAttribute("srcObject");
 }
 
-export function* watchCallRequest(channel: Channel) {
-  yield takeEvery(CALL, handleCallRequest, channel);
+async function disconnect() {
+  connectButton.disabled = false;
+  disconnectButton.disabled = true;
+  callButton.disabled = true;
+  unsetVideoStream(localVideo);
+  unsetVideoStream(remoteVideo);
+  remoteStream = new MediaStream();
+  setVideoStream(remoteVideo, remoteStream);
+  peerConnection.close();
+  peerConnection = null;
+  pushPeerMessage("disconnect", {});
+}
+
+*/
+
+function* handleDisconnectVideo(channel: Channel) {
+  console.log('DISCONNECTYY!');
+  yield fork(pushToVideoSocketChannel, channel, sendRemoteDisconnect());
+}
+
+export function* watchDisconnectVideo(channel: Channel) {
+  yield takeEvery(LOCAL_DISCONNECT, handleDisconnectVideo, channel);
+}
+
+function* handleJoinRequest(channel: Channel) {
+  yield fork(pushToVideoSocketChannel, channel, joiningCall());
+}
+
+export function* watchJoinRequest(channel: Channel) {
+  yield takeEvery(JOIN_CALL, handleJoinRequest, channel);
 }
 
 export function* watchIceCandidate() {
@@ -443,6 +504,8 @@ export default function* rootSaga() {
     watchMouseUp(whiteboardChannel),
     watchConnectVideo(videoChannel),
     watchCallRequest(videoChannel),
+    watchJoinRequest(videoChannel),
+    watchDisconnectVideo(videoChannel),
     // watchAnswerRequest(videoChannel),
     // watchSetRemoteOffer(videoChannel),
     watchIceCandidate(),
